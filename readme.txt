@@ -5,3 +5,5 @@ gabs
 ivanna 
 melani 
 joel
+
+arquitectura monolitica 
