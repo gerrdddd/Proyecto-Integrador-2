@@ -3,24 +3,49 @@
 import { useState } from 'react';
 
 export default function LoginPage() {
-  // Estados para controlar lo que escribe el usuario (y usarlos en las validaciones de la Tarea 2)
+  // Estados para los campos
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  // Estados para manejar los errores visuales (Tarea 2)
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí irá la lógica para enviar los datos más adelante
-    console.log('Intentando iniciar sesión con:', { username, password });
+    
+    // Limpiamos errores previos
+    setErrorMessage('');
+
+    // Validación 1: Campos vacíos (Tarea 2 - Parte 1)
+    if (!username.trim() || !password.trim()) {
+      setErrorMessage('Por favor, rellene todos los campos vacíos.');
+      return;
+    }
+
+    // Aquí simulación de respuesta del Backend (Tarea 2 - Parte 2)
+    // Cuando conectes tu backend real, este mensaje vendrá del servidor si los datos están mal
+    if (username !== 'admin' || password !== '123456') {
+      setErrorMessage('Usuario o contraseña incorrectos (Error del Servidor).');
+      return;
+    }
+
+    alert('¡Inicio de sesión exitoso!');
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      {/* Contenedor del Login: Responsivo (ancho completo en celular, máximo 400px en pantallas grandes) */}
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-md">
         
         <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
           Iniciar Sesión
         </h2>
+
+        {/* Mensaje de Error Visual (Tarea 2) */}
+        {errorMessage && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
@@ -34,7 +59,9 @@ export default function LoginPage() {
               placeholder="Ingresa tu usuario"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={`w-full rounded-lg border p-2.5 text-gray-900 focus:outline-none focus:ring-1 ${
+                errorMessage && !username ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+              }`}
             />
           </div>
 
@@ -44,11 +71,13 @@ export default function LoginPage() {
               Contraseña
             </label>
             <input
-              type="password" // Esto oculta la contraseña mientras se escribe automáticamente
+              type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={`w-full rounded-lg border p-2.5 text-gray-900 focus:outline-none focus:ring-1 ${
+                errorMessage && !password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+              }`}
             />
           </div>
 
