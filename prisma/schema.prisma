@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+  url      = env("DATABASE_URL")
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Usuario {
+  id_usuario  Int         @id @default(autoincrement())
+  nombre      String      @db.VarChar(100)
+  usuario     String      @unique(map: "usuario") @db.VarChar(50)
+  password    String      @db.VarChar(255)
+  rol         String      @db.VarChar(50)
+  cortes_caja CorteCaja[]
+  egresos     Egreso[]
+  ventas      Venta[]
+
+  @@map("usuarios")
+}
+
+model Producto {
+  codigo         String         @id @db.VarChar(50)
+  nombre         String         @db.VarChar(100)
+  descripcion    String?        @db.Text
+  precio         Decimal        @db.Decimal(10, 2)
+  stock          Int
+  activo         Boolean?       @default(true)
+  detalle_ventas DetalleVenta[]
+
+  @@map("productos")
+}
+
+model Venta {
+  id_venta       Int            @id @default(autoincrement())
+  id_usuario     Int
+  fecha          DateTime?      @default(now()) @db.DateTime(0)
+  total          Decimal        @db.Decimal(10, 2)
+  detalle_ventas DetalleVenta[]
+  usuario        Usuario        @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "ventas_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+  @@map("ventas")
+}
+
+model DetalleVenta {
+  id_detalle      Int      @id @default(autoincrement())
+  id_venta        Int
+  codigo_producto String   @db.VarChar(50)
+  nombre_producto String   @db.VarChar(100)
+  cantidad        Int
+  precio_unitario Decimal  @db.Decimal(10, 2)
+  subtotal        Decimal  @db.Decimal(10, 2)
+  venta           Venta    @relation(fields: [id_venta], references: [id_venta], onDelete: NoAction, onUpdate: NoAction, map: "detalle_ventas_ibfk_1")
+  producto        Producto @relation(fields: [codigo_producto], references: [codigo], onDelete: NoAction, onUpdate: NoAction, map: "detalle_ventas_ibfk_2")
+
+  @@index([codigo_producto], map: "codigo_producto")
+  @@index([id_venta], map: "id_venta")
+  @@map("detalle_ventas")
+}
+
+model Egreso {
+  id_egreso   Int       @id @default(autoincrement())
+  id_usuario  Int?
+  descripcion String    @db.Text
+  categoria   String?   @db.VarChar(100)
+  monto       Decimal   @db.Decimal(10, 2)
+  fecha       DateTime? @default(now()) @db.DateTime(0)
+  usuario     Usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "egresos_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+  @@map("egresos")
+}
+
+model CorteCaja {
+  id_corte      Int       @id @default(autoincrement())
+  id_usuario    Int
+  fecha         DateTime? @default(now()) @db.DateTime(0)
+  monto_inicial Decimal   @db.Decimal(10, 2)
+  ventas_dia    Decimal   @db.Decimal(10, 2)
+  egresos_dia   Decimal   @db.Decimal(10, 2)
+  monto_final   Decimal   @db.Decimal(10, 2)
+  diferencia    Decimal   @db.Decimal(10, 2)
+  usuario       Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "cortes_caja_ibfk_1")
+
+  @@index([id_usuario], map: "id_usuario")
+  @@map("cortes_caja")
+}
