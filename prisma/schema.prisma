@@ -1,18 +1,62 @@
+// ============================================================================
+// Schema unificado — Sistema "La Güera"
+// Prisma 7 + Driver Adapter (@prisma/adapter-mariadb) sobre MySQL
+//
+// Este archivo reemplaza a los DOS schemas que existían antes
+// (/prisma/schema.prisma y /egresos/prisma/schema.prisma), que declaraban
+// modelos `Egreso` distintos apuntando a la misma tabla.
+// ============================================================================
+
 generator client {
   provider = "prisma-client-js"
-  url      = env("DATABASE_URL")
 }
 
 datasource db {
   provider = "mysql"
 }
 
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum Rol {
+  ADMIN
+  CAJERO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+}
+
+enum TipoEgreso {
+  GASTO
+  COMPRA
+  SERVICIO
+  NOMINA
+  OTRO
+}
+
+enum EstadoVenta {
+  COMPLETADA
+  CANCELADA
+  DEVUELTA
+}
+
+// ----------------------------------------------------------------------------
+// Usuarios y autenticación
+// ----------------------------------------------------------------------------
+
 model Usuario {
-  id_usuario  Int         @id @default(autoincrement())
-  nombre      String      @db.VarChar(100)
-  usuario     String      @unique(map: "usuario") @db.VarChar(50)
-  password    String      @db.VarChar(255)
-  rol         String      @db.VarChar(50)
+  id_usuario Int     @id @default(autoincrement())
+  nombre     String  @db.VarChar(100)
+  usuario    String  @unique(map: "usuario") @db.VarChar(50)
+  // Hash de bcrypt. NUNCA guardar la contraseña en texto plano.
+  password   String  @db.VarChar(255)
+  rol        Rol     @default(CAJERO)
+  activo     Boolean @default(true)
+
   cortes_caja CorteCaja[]
   egresos     Egreso[]
   ventas      Venta[]
@@ -20,70 +64,121 @@ model Usuario {
   @@map("usuarios")
 }
 
+// ----------------------------------------------------------------------------
+// Catálogo / Inventario
+// ----------------------------------------------------------------------------
+
 model Producto {
-  codigo         String         @id @db.VarChar(50)
-  nombre         String         @db.VarChar(100)
-  descripcion    String?        @db.Text
-  precio         Decimal        @db.Decimal(10, 2)
-  stock          Int
-  activo         Boolean?       @default(true)
+  codigo      String  @id @db.VarChar(50) // código de barras
+  nombre      String  @db.VarChar(100)
+  descripcion String? @db.Text
+  precio      Decimal @db.Decimal(10, 2) // precio de venta
+  stock       Int     @default(0)
+  activo      Boolean @default(true)
+
+  // Campos que la pantalla de Inventario ya usaba pero no existían en la BD.
+  sku       String? @db.VarChar(50)
+  categoria String? @db.VarChar(50)
+  costo     Decimal @default(0) @db.Decimal(10, 2)
+
   detalle_ventas DetalleVenta[]
 
+  @@index([categoria])
+  @@index([activo])
   @@map("productos")
 }
 
+// ----------------------------------------------------------------------------
+// Ventas (Punto de Venta)
+// ----------------------------------------------------------------------------
+
 model Venta {
-  id_venta       Int            @id @default(autoincrement())
-  id_usuario     Int
-  fecha          DateTime?      @default(now()) @db.DateTime(0)
-  total          Decimal        @db.Decimal(10, 2)
+  id_venta    Int         @id @default(autoincrement())
+  id_usuario  Int
+  fecha       DateTime    @default(now()) @db.DateTime(0)
+  total       Decimal     @db.Decimal(10, 2)
+  // Campos que el módulo de Corte de Caja necesita para sus reportes.
+  metodo_pago MetodoPago  @default(EFECTIVO)
+  estado      EstadoVenta @default(COMPLETADA)
+
   detalle_ventas DetalleVenta[]
   usuario        Usuario        @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "ventas_ibfk_1")
 
   @@index([id_usuario], map: "id_usuario")
+  @@index([fecha])
   @@map("ventas")
 }
 
 model DetalleVenta {
-  id_detalle      Int      @id @default(autoincrement())
+  id_detalle      Int     @id @default(autoincrement())
   id_venta        Int
-  codigo_producto String   @db.VarChar(50)
-  nombre_producto String   @db.VarChar(100)
+  codigo_producto String  @db.VarChar(50)
+  // Se copia el nombre y el precio al momento de la venta: si mañana cambia
+  // el catálogo, el ticket histórico no se altera.
+  nombre_producto String  @db.VarChar(100)
   cantidad        Int
-  precio_unitario Decimal  @db.Decimal(10, 2)
-  subtotal        Decimal  @db.Decimal(10, 2)
-  venta           Venta    @relation(fields: [id_venta], references: [id_venta], onDelete: NoAction, onUpdate: NoAction, map: "detalle_ventas_ibfk_1")
-  producto        Producto @relation(fields: [codigo_producto], references: [codigo], onDelete: NoAction, onUpdate: NoAction, map: "detalle_ventas_ibfk_2")
+  precio_unitario Decimal @db.Decimal(10, 2)
+  subtotal        Decimal @db.Decimal(10, 2)
+
+  venta    Venta    @relation(fields: [id_venta], references: [id_venta], onDelete: Cascade, onUpdate: NoAction, map: "detalle_ventas_ibfk_1")
+  producto Producto @relation(fields: [codigo_producto], references: [codigo], onDelete: NoAction, onUpdate: NoAction, map: "detalle_ventas_ibfk_2")
 
   @@index([codigo_producto], map: "codigo_producto")
   @@index([id_venta], map: "id_venta")
   @@map("detalle_ventas")
 }
 
-model Egreso {
-  id_egreso   Int       @id @default(autoincrement())
-  id_usuario  Int?
-  descripcion String    @db.Text
-  categoria   String?   @db.VarChar(100)
-  monto       Decimal   @db.Decimal(10, 2)
-  fecha       DateTime? @default(now()) @db.DateTime(0)
-  usuario     Usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "egresos_ibfk_1")
+// ----------------------------------------------------------------------------
+// Egresos
+//
+// Modelo consolidado: toma los campos ricos del módulo de Egresos
+// (concepto, metodoPago, tipo, referencia) y le suma la relación con Usuario
+// que traía el schema de la raíz.
+//
+// El campo se llama `id` en Prisma pero la columna real sigue siendo
+// `id_egreso`, para no romper ni el código del módulo ni el SQL existente.
+// ----------------------------------------------------------------------------
 
+model Egreso {
+  id          Int        @id @default(autoincrement()) @map("id_egreso")
+  id_usuario  Int?
+  concepto    String     @db.VarChar(150)
+  descripcion String?    @db.VarChar(500)
+  monto       Decimal    @db.Decimal(10, 2)
+  fecha       DateTime   @db.Date
+  metodoPago  MetodoPago @map("metodo_pago")
+  tipo        TipoEgreso
+  referencia  String?    @db.VarChar(100)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "egresos_ibfk_1")
+
+  @@index([fecha])
+  @@index([tipo])
+  @@index([metodoPago])
   @@index([id_usuario], map: "id_usuario")
   @@map("egresos")
 }
 
+// ----------------------------------------------------------------------------
+// Corte de caja
+// ----------------------------------------------------------------------------
+
 model CorteCaja {
-  id_corte      Int       @id @default(autoincrement())
+  id_corte      Int      @id @default(autoincrement())
   id_usuario    Int
-  fecha         DateTime? @default(now()) @db.DateTime(0)
-  monto_inicial Decimal   @db.Decimal(10, 2)
-  ventas_dia    Decimal   @db.Decimal(10, 2)
-  egresos_dia   Decimal   @db.Decimal(10, 2)
-  monto_final   Decimal   @db.Decimal(10, 2)
-  diferencia    Decimal   @db.Decimal(10, 2)
-  usuario       Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "cortes_caja_ibfk_1")
+  fecha         DateTime @default(now()) @db.DateTime(0)
+  monto_inicial Decimal  @db.Decimal(10, 2)
+  ventas_dia    Decimal  @db.Decimal(10, 2)
+  egresos_dia   Decimal  @db.Decimal(10, 2)
+  monto_final   Decimal  @db.Decimal(10, 2)
+  diferencia    Decimal  @db.Decimal(10, 2)
+
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "cortes_caja_ibfk_1")
 
   @@index([id_usuario], map: "id_usuario")
+  @@index([fecha])
   @@map("cortes_caja")
 }
