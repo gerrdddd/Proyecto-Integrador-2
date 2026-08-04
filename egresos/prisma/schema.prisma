@@ -1,0 +1,45 @@
+// ============================================================================
+// Prisma schema — Módulo de Egresos y Gastos — "La Güera"
+// Prisma 7 + Driver Adapter (@prisma/adapter-mariadb) sobre MySQL
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+}
+
+enum TipoEgreso {
+  GASTO
+  COMPRA
+  SERVICIO
+  NOMINA
+  OTRO
+}
+
+model Egreso {
+  id          Int        @id @default(autoincrement())
+  concepto    String     @db.VarChar(150)
+  descripcion String?    @db.VarChar(500)
+  monto       Decimal    @db.Decimal(10, 2)
+  fecha       DateTime   @db.Date
+  metodoPago  MetodoPago @map("metodo_pago")
+  tipo        TipoEgreso
+  referencia  String?    @db.VarChar(100)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([fecha])
+  @@index([tipo])
+  @@index([metodoPago])
+  @@map("egresos")
+}

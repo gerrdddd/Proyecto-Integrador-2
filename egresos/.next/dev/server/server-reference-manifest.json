@@ -1,0 +1,66 @@
+{
+  "node": {
+    "00e2949f1c6dd067229f15b7e4a92e99fcf29d3f61": {
+      "workers": {
+        "app/egresos/page": {
+          "moduleId": "[project]/.next-internal/server/app/egresos/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/egresos/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "obtenerResumen",
+          "filename": "src/app/egresos/actions.ts"
+        }
+      },
+      "filename": "src/app/egresos/actions.ts",
+      "exportedName": "obtenerResumen"
+    },
+    "4034d1d5994511437e4712e88086c1d3d1643269b6": {
+      "workers": {
+        "app/egresos/page": {
+          "moduleId": "[project]/.next-internal/server/app/egresos/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/egresos/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "crearEgreso",
+          "filename": "src/app/egresos/actions.ts"
+        }
+      },
+      "filename": "src/app/egresos/actions.ts",
+      "exportedName": "crearEgreso"
+    },
+    "40494d4e9e651f8b7943c2430916b5bed08b48b4a7": {
+      "workers": {
+        "app/egresos/page": {
+          "moduleId": "[project]/.next-internal/server/app/egresos/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/egresos/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "eliminarEgreso",
+          "filename": "src/app/egresos/actions.ts"
+        }
+      },
+      "filename": "src/app/egresos/actions.ts",
+      "exportedName": "eliminarEgreso"
+    },
+    "405a20402cbbeb8458aabba042e8febbae26eafd70": {
+      "workers": {
+        "app/egresos/page": {
+          "moduleId": "[project]/.next-internal/server/app/egresos/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/egresos/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "obtenerEgresos",
+          "filename": "src/app/egresos/actions.ts"
+        }
+      },
+      "filename": "src/app/egresos/actions.ts",
+      "exportedName": "obtenerEgresos"
+    },
+    "60cf4f0b6d50a8e132aaa37aabdb46c21aa3c9a496": {
+      "workers": {
+        "app/egresos/page": {
+          "moduleId": "[project]/.next-internal/server/app/egresos/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/egresos/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "editarEgreso",
+          "filename": "src/app/egresos/actions.ts"
+        }
+      },
+      "filename": "src/app/egresos/actions.ts",
+      "exportedName": "editarEgreso"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "hscc/wU/v/ClmqtU5aAb+gApOt9TF6zNlFPnMTFg8Vs="
+}
